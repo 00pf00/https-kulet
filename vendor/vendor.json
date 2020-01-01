@@ -1,0 +1,13 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "NFklID39AYSeCzNri/v4RHAP5sg=",
+			"path": "github.com/golang/net/websocket",
+			"revision": "c0dbc17a35534bf2e581d7a942408dc936316da4",
+			"revisionTime": "2019-11-08T21:16:37Z"
+		}
+	],
+	"rootPath": "00pf00/https-kulet"
+}

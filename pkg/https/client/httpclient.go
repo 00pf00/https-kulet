@@ -4,6 +4,7 @@ import (
 	"00pf00/https-kulet/pkg/util"
 	"crypto/tls"
 	"fmt"
+	"github.com/golang/net/websocket"
 	"net/http"
 )
 
@@ -35,20 +36,46 @@ func (client *HttpClient) Post() {
 	}
 	httpclient := &http.Client{
 		Transport:     tr,
+		CheckRedirect: Redirect,
 	}
-	request, err := http.NewRequest("POST",client.Url,nil)
+	request, err := http.NewRequest("POST", client.Url, nil)
 
 	if err != nil {
-		fmt.Printf("get request fail url = %s \n",client.Url)
+		fmt.Printf("get request fail url = %s \n", client.Url)
 	}
 
-	request.Header.Add("X-Stream-Protocol-Version","v2.channel.k8s.io")
-	request.Header.Add("X-Stream-Protocol-Version","channel.k8s.io")
-	response,err := httpclient.Do(request)
+	request.Header.Add("X-Stream-Protocol-Version", "v2.channel.k8s.io")
+	request.Header.Add("X-Stream-Protocol-Version", "channel.k8s.io")
+	request.Header.Add("Connection", "Upgrade")
+	request.Header.Add("Upgrade", "websocket")
+	_, err = httpclient.Do(request)
 	if err != nil {
-		fmt.Printf("response fail err = %v \n",err)
+		fmt.Printf("response fail err = %v \n", err)
 		return
 	}
-	heads := response.Header
-	fmt.Printf("Locatin = %v",heads.Get("Location"))
+}
+
+func Redirect(req *http.Request, via []*http.Request) error {
+	host := req.URL.Host
+	path := req.URL.Path
+	ws := "ws://" + host + path
+	origin := "https://" + host
+	wscli, err := websocket.Dial(ws, "", origin)
+	if err != nil {
+		fmt.Printf("websocket connection failed url = %s \n", ws)
+		return err
+	}
+	running := true
+	for running {
+		var msg = make([]byte, 512)
+		n, err := wscli.Read(msg)
+		if err != nil {
+			fmt.Printf("websocket read file err = %v \n", err)
+			return err
+		}
+		fmt.Print(string(msg[:n]))
+	}
+
+	fmt.Printf("redirect url = %s \n", req.URL.String())
+	return nil
 }

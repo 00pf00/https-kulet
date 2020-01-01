@@ -8,7 +8,7 @@ import (
 
 func main() {
 	dir,_ := os.Getwd()
-	fmt.Printf("workpath = %v",dir)
+	fmt.Printf("workpath = %v\n",dir)
 	httpclient := client.NewClient()
 	httpclient.Post()
 }
