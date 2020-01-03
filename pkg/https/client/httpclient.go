@@ -4,7 +4,7 @@ import (
 	"00pf00/https-kulet/pkg/util"
 	"crypto/tls"
 	"fmt"
-	"github.com/golang/net/websocket"
+	"golang.org/x/net/websocket"
 	"net/http"
 )
 
@@ -56,26 +56,42 @@ func (client *HttpClient) Post() {
 }
 
 func Redirect(req *http.Request, via []*http.Request) error {
-	host := req.URL.Host
-	path := req.URL.Path
-	ws := "ws://" + host + path
-	origin := "https://" + host
-	wscli, err := websocket.Dial(ws, "", origin)
+	wss := req.URL
+	wss.Scheme = "wss"
+	orignUrl := via[0].URL
+	cert, err := tls.LoadX509KeyPair(util.CLIENT_CERT, util.CLIENT_KEY)
 	if err != nil {
-		fmt.Printf("websocket connection failed url = %s \n", ws)
+		fmt.Printf("client load cert fail certpath = %s keypath = %s \n", util.CLIENT_KEY, util.CLIENT_KEY)
+		return err
+	}
+	config := &websocket.Config{
+		Location: wss,
+		Origin:   orignUrl,
+		Protocol: nil,
+		Version:  13,
+		TlsConfig: &tls.Config{
+			Certificates:       []tls.Certificate{cert},
+			InsecureSkipVerify: true,
+		},
+		Header: nil,
+		Dialer: nil,
+	}
+	wscli, err := websocket.DialConfig(config)
+	//wscli, err := websocket.Dial(ws, "", origin)
+	if err != nil {
+		fmt.Printf("websocket connection failed url = %s \n", wss.Host)
 		return err
 	}
 	running := true
 	for running {
-		var msg = make([]byte, 512)
+		var msg = make([]byte, 1024)
 		n, err := wscli.Read(msg)
+		fmt.Printf("read %d \n", n)
 		if err != nil {
 			fmt.Printf("websocket read file err = %v \n", err)
 			return err
 		}
 		fmt.Print(string(msg[:n]))
 	}
-
-	fmt.Printf("redirect url = %s \n", req.URL.String())
 	return nil
 }
