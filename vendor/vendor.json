@@ -9,8 +9,10 @@
 			"revisionTime": "2019-11-08T21:16:37Z"
 		},
 		{
+			"checksumSHA1": "n3mE8lM/N2dNMAZVtawNQR6DhGk=",
 			"path": "golang.org/x/net/websocket",
-			"revision": ""
+			"revision": "c0dbc17a35534bf2e581d7a942408dc936316da4",
+			"revisionTime": "2019-11-08T21:16:37Z"
 		}
 	],
 	"rootPath": "00pf00/https-kulet"
