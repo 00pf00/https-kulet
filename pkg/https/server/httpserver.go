@@ -1,11 +1,14 @@
 package server
 
 import (
+	"00pf00/https-kulet/pkg/https/client"
+	"00pf00/https-kulet/pkg/https/client/gorillawebsocket"
 	"00pf00/https-kulet/pkg/util"
 	"crypto/tls"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -25,32 +28,9 @@ func (server *HttpServer) StartServer() {
 		Certificates:       []tls.Certificate{cert},
 		InsecureSkipVerify: true,
 	}
-	mux := &http.ServeMux{}
-	mux.HandleFunc("/exec", func(writer http.ResponseWriter, request *http.Request) {
-		http.Redirect(writer, request, "/cri", http.StatusFound)
-	})
-	mux.HandleFunc("/cri", func(writer http.ResponseWriter, request *http.Request) {
-		upgrader := websocket.Upgrader{}
-		c, err := upgrader.Upgrade(writer, request, nil)
-		if err != nil {
-			fmt.Printf("upgrade fail err = %v\n", err)
-		}
-		defer c.Close()
-		running := true
-		for running {
-			err = c.WriteMessage(websocket.TextMessage, []byte{'a'})
-			if err != nil {
-				fmt.Printf("websocket  write fail err = %v\n", err)
-				running = false
-			}
-			time.Sleep(1 * time.Second)
-
-		}
-	})
-
 	s := &http.Server{
 		Addr:              server.Addr,
-		Handler:           mux,
+		Handler:           server,
 		TLSConfig:         config,
 		ReadTimeout:       0,
 		ReadHeaderTimeout: 0,
@@ -75,4 +55,57 @@ func NewHttpServer() *HttpServer {
 		Key:  util.SERVER_KEY,
 		Addr: "0.0.0.0:10250",
 	}
+}
+
+func (server *HttpServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	if strings.Index(request.URL.String(), "exec") > 0 {
+		EXEC(writer, request)
+	} else if strings.Index(request.URL.String(), "cri") > 0 {
+		CRI(writer, request)
+	}
+
+}
+
+func EXEC(writer http.ResponseWriter, request *http.Request) {
+	cert, err := tls.LoadX509KeyPair(util.CLIENT_CERT, util.CLIENT_KEY)
+	if err != nil {
+		fmt.Printf("client load cert fail certpath = %s keypath = %s \n", util.CLIENT_CERT, util.CLIENT_KEY)
+		return
+	}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			Certificates:       []tls.Certificate{cert},
+			InsecureSkipVerify: true,
+		},
+	}
+	httpclient := &http.Client{
+		Transport:     tr,
+		CheckRedirect: RD,
+	}
+
+}
+
+func CRI(writer http.ResponseWriter, request *http.Request) {
+	upgrader := websocket.Upgrader{}
+	c, err := upgrader.Upgrade(writer, request, nil)
+	if err != nil {
+		fmt.Printf("upgrade fail err = %v\n", err)
+	}
+	defer c.Close()
+	running := true
+	for running {
+		err = c.WriteMessage(websocket.TextMessage, []byte{'a'})
+		if err != nil {
+			fmt.Printf("websocket  write fail err = %v\n", err)
+			running = false
+		}
+		time.Sleep(1 * time.Second)
+
+	}
+}
+
+//处理回调
+func RD(req *http.Request, via []*http.Request) error {
+	http.Redirect(writer, request, "/cri/a", http.StatusFound)
+	return nil
 }
