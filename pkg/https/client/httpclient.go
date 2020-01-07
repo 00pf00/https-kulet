@@ -4,7 +4,7 @@ import (
 	"00pf00/https-kulet/pkg/util"
 	"crypto/tls"
 	"fmt"
-	"golang.org/x/net/websocket"
+	"github.com/golang/net/websocket"
 	"net"
 	"net/http"
 	"time"
