@@ -10,5 +10,5 @@ const (
 	//SERVER_ADDR = "https://49.51.38.39:10250/exec/default/ng-0/web-server?command=touch&command=ls&input=1&output=1&tty=1"
 	CLIENT_CERT = "./conf/cert/kubelet.crt"
 	CLIENT_KEY  = "./conf/cert/kubelet.key"
-	SERVER_ADDR = "https://49.51.38.39:10250/exec/default/account-ccnpc/account?command=touch&command=ls&input=1&output=1&tty=1"
+	SERVER_ADDR = "https://192.168.1.24:10250/exec/default/account-ccnpc/account?command=touch&command=ls&input=1&output=1&tty=1"
 )
