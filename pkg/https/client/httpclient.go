@@ -1,10 +1,11 @@
 package client
 
 import (
+	"00pf00/https-kulet/pkg/https/client/gorillawebsocket"
 	"00pf00/https-kulet/pkg/util"
 	"crypto/tls"
 	"fmt"
-	"github.com/golang/net/websocket"
+	"golang.org/x/net/websocket"
 	"net"
 	"net/http"
 	"time"
@@ -38,7 +39,7 @@ func (client *HttpClient) Post() {
 	}
 	httpclient := &http.Client{
 		Transport:     tr,
-		CheckRedirect: Redirect,
+		CheckRedirect: gorillawebsocket.RD,
 	}
 	request, err := http.NewRequest("POST", client.Url, nil)
 
@@ -50,11 +51,12 @@ func (client *HttpClient) Post() {
 	request.Header.Add("X-Stream-Protocol-Version", "channel.k8s.io")
 	request.Header.Add("Connection", "Upgrade")
 	request.Header.Add("Upgrade", "websocket")
-	_, err = httpclient.Do(request)
+	body, err := httpclient.Do(request)
 	if err != nil {
 		fmt.Printf("response fail err = %v \n", err)
 		return
 	}
+	fmt.Printf(body.Status)
 }
 
 func Redirect(req *http.Request, via []*http.Request) error {
