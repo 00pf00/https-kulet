@@ -11,14 +11,12 @@ import (
 func RD(req *http.Request, via []*http.Request) error {
 	wss := req.URL
 	wss.Scheme = "wss"
-
 	cert, err := tls.LoadX509KeyPair(util.CLIENT_CERT, util.CLIENT_KEY)
 	if err != nil {
 		fmt.Printf("client load cert fail certpath = %s keypath = %s \n", util.CLIENT_KEY, util.CLIENT_KEY)
 		return err
 	}
 	dailer := &websocket.Dialer{
-
 		TLSClientConfig: &tls.Config{
 			Certificates:       []tls.Certificate{cert},
 			InsecureSkipVerify: true,
@@ -31,8 +29,7 @@ func RD(req *http.Request, via []*http.Request) error {
 	}
 	running := true
 	for running {
-		n, msg, err := wscli.ReadMessage()
-		fmt.Printf("read %d \n", n)
+		_, msg, err := wscli.ReadMessage()
 		if err != nil {
 			fmt.Printf("websocket read file err = %v \n", err)
 			return err
