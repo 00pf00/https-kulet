@@ -5,7 +5,9 @@ import (
 	"crypto/tls"
 	"fmt"
 	"golang.org/x/net/websocket"
+	"net"
 	"net/http"
+	"time"
 )
 
 type HttpClient struct {
@@ -74,7 +76,9 @@ func Redirect(req *http.Request, via []*http.Request) error {
 			InsecureSkipVerify: true,
 		},
 		Header: nil,
-		Dialer: nil,
+		Dialer: &net.Dialer{
+			KeepAlive: 1 * time.Second,
+		},
 	}
 	wscli, err := websocket.DialConfig(config)
 	//wscli, err := websocket.Dial(ws, "", origin)
