@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func RD(req *http.Request, via []*http.Request) error {
+func LSRD(req *http.Request, via []*http.Request) error {
 	wss := req.URL
 	wss.Scheme = "wss"
 	cert, err := tls.LoadX509KeyPair(util.CLIENT_CERT, util.CLIENT_KEY)

@@ -21,11 +21,11 @@ func NewClient() *HttpClient {
 	return &HttpClient{
 		CertPath: util.CLIENT_CERT,
 		KeyPath:  util.CLIENT_KEY,
-		Url:      util.SERVER_ADDR,
+		Url:      util.COMMAND_LS,
 	}
 }
 
-func (client *HttpClient) Post() {
+func (client *HttpClient) LS() {
 	cert, err := tls.LoadX509KeyPair(client.CertPath, client.KeyPath)
 	if err != nil {
 		fmt.Printf("client load cert fail certpath = %s keypath = %s \n", client.CertPath, client.KeyPath)
@@ -39,7 +39,7 @@ func (client *HttpClient) Post() {
 	}
 	httpclient := &http.Client{
 		Transport:     tr,
-		CheckRedirect: gorillawebsocket.RD,
+		CheckRedirect: gorillawebsocket.LSRD,
 	}
 	request, err := http.NewRequest("POST", client.Url, nil)
 
@@ -52,14 +52,13 @@ func (client *HttpClient) Post() {
 	request.Header.Add("Connection", "Upgrade")
 	request.Header.Add("Upgrade", "websocket")
 	body, err := httpclient.Do(request)
-	if err != nil {
+	if err != nil && body.StatusCode != http.StatusFound {
 		fmt.Printf("response fail err = %v \n", err)
 		return
 	}
-	fmt.Printf(body.Status)
 }
 
-func Redirect(req *http.Request, via []*http.Request) error {
+func LSRD(req *http.Request, via []*http.Request) error {
 	wss := req.URL
 	wss.Scheme = "wss"
 	orignUrl := via[0].URL
@@ -83,7 +82,6 @@ func Redirect(req *http.Request, via []*http.Request) error {
 		},
 	}
 	wscli, err := websocket.DialConfig(config)
-	//wscli, err := websocket.Dial(ws, "", origin)
 	if err != nil {
 		fmt.Printf("websocket connection failed url = %s \n", wss.Host)
 		return err
