@@ -9,6 +9,12 @@
 			"revisionTime": "2019-11-08T21:16:37Z"
 		},
 		{
+			"checksumSHA1": "oUtU1Z0YIhbjb+bfYSkzlim9FD4=",
+			"path": "github.com/gorilla/mux",
+			"revision": "49c01487a141b49f8ffe06277f3dca3ee80a55fa",
+			"revisionTime": "2019-11-21T17:05:00Z"
+		},
+		{
 			"checksumSHA1": "ajAqUByI39Sfm99F/ZNOguPP3Mk=",
 			"path": "github.com/gorilla/websocket",
 			"revision": "c3e18be99d19e6b3e8f1559eea2c161a665c4b6b",

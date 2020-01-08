@@ -4,9 +4,9 @@ import (
 	"00pf00/https-kulet/pkg/util"
 	"crypto/tls"
 	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"net/http"
-	"strings"
 )
 
 type HttpServer struct {
@@ -25,20 +25,14 @@ func (server *HttpServer) StartServer() {
 		Certificates:       []tls.Certificate{cert},
 		InsecureSkipVerify: true,
 	}
+	//分发器
+	r := mux.NewRouter()
+	r.HandleFunc("/exec/{podNamespace}/{podID}/{containerName}", EXEC)
+	r.HandleFunc("/cri/exec/{token}", CRI)
 	s := &http.Server{
-		Addr:              server.Addr,
-		Handler:           server,
-		TLSConfig:         config,
-		ReadTimeout:       0,
-		ReadHeaderTimeout: 0,
-		WriteTimeout:      0,
-		IdleTimeout:       0,
-		MaxHeaderBytes:    0,
-		TLSNextProto:      nil,
-		ConnState:         nil,
-		ErrorLog:          nil,
-		BaseContext:       nil,
-		ConnContext:       nil,
+		Addr:      server.Addr,
+		Handler:   r,
+		TLSConfig: config,
 	}
 	err = s.ListenAndServeTLS("", "")
 	if err != nil {
@@ -52,15 +46,6 @@ func NewHttpServer() *HttpServer {
 		Key:  util.SERVER_KEY,
 		Addr: "0.0.0.0:10250",
 	}
-}
-
-func (server *HttpServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	if strings.Index(request.URL.String(), "cri") > 0 {
-		CRI(writer, request)
-	} else if strings.Index(request.URL.String(), "exec") > 0 {
-		EXEC(writer, request)
-	}
-
 }
 
 func EXEC(writer http.ResponseWriter, request *http.Request) {
@@ -172,6 +157,9 @@ func CRI(writer http.ResponseWriter, request *http.Request) {
 
 	}
 }
+
+//服务端处理重定向
 func RD(req *http.Request, via []*http.Request) error {
+	//返回http.ErrUseLastResponse 禁止redirect
 	return http.ErrUseLastResponse
 }
