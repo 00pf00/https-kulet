@@ -21,11 +21,12 @@ func NewClient() *HttpClient {
 	return &HttpClient{
 		CertPath: util.CLIENT_CERT,
 		KeyPath:  util.CLIENT_KEY,
-		Url:      util.COMMAND_LS,
 	}
 }
 
+//模拟kubectl exec podname ls
 func (client *HttpClient) LS() {
+	client.Url = util.COMMAND_LS
 	cert, err := tls.LoadX509KeyPair(client.CertPath, client.KeyPath)
 	if err != nil {
 		fmt.Printf("client load cert fail certpath = %s keypath = %s \n", client.CertPath, client.KeyPath)
@@ -40,6 +41,41 @@ func (client *HttpClient) LS() {
 	httpclient := &http.Client{
 		Transport:     tr,
 		CheckRedirect: gorillawebsocket.LSRD,
+	}
+	request, err := http.NewRequest("POST", client.Url, nil)
+
+	if err != nil {
+		fmt.Printf("get request fail url = %s \n", client.Url)
+	}
+
+	request.Header.Add("X-Stream-Protocol-Version", "v2.channel.k8s.io")
+	request.Header.Add("X-Stream-Protocol-Version", "channel.k8s.io")
+	request.Header.Add("Connection", "Upgrade")
+	request.Header.Add("Upgrade", "websocket")
+	body, err := httpclient.Do(request)
+	if err != nil && body.StatusCode != http.StatusFound {
+		fmt.Printf("response fail err = %v \n", err)
+		return
+	}
+}
+
+//模拟kubectl exec -it podname /bin/bash
+func (client *HttpClient) BASH() {
+	client.Url = util.COMMAND_BASH
+	cert, err := tls.LoadX509KeyPair(client.CertPath, client.KeyPath)
+	if err != nil {
+		fmt.Printf("client load cert fail certpath = %s keypath = %s \n", client.CertPath, client.KeyPath)
+		return
+	}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			Certificates:       []tls.Certificate{cert},
+			InsecureSkipVerify: true,
+		},
+	}
+	httpclient := &http.Client{
+		Transport:     tr,
+		CheckRedirect: gorillawebsocket.BASHRD,
 	}
 	request, err := http.NewRequest("POST", client.Url, nil)
 

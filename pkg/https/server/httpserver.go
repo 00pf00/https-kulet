@@ -124,19 +124,52 @@ func CRI(writer http.ResponseWriter, request *http.Request) {
 		fmt.Printf("websocket connection failed url = %s \n", wss.Host)
 		return
 	}
+	stop := make(chan struct{})
+	//转发apiserver请求kubelet的消息
+	go func(wscli, c *websocket.Conn, stop chan struct{}) {
+		running := true
+		for running {
+			select {
+			default:
+				n, msg, err := c.ReadMessage()
+				if err != nil {
+					fmt.Printf("apiserver websocket  read fail err = %v\n", err)
+					running = false
+					stop <- struct{}{}
+					return
+				}
+				err = wscli.WriteMessage(n, msg)
+				if err != nil {
+					fmt.Printf("kubelet websocket  write fail err = %v\n", err)
+					running = false
+					stop <- struct{}{}
+					return
+				}
+			case <-stop:
+				running = false
+			}
+		}
+	}(wscli, c, stop)
+	//转发kubelet响应的消息
 	defer c.Close()
 	running := true
 	for running {
-		n, msg, err := wscli.ReadMessage()
-		if err != nil {
-			fmt.Printf("websocket  read fail err = %v\n", err)
-			running = false
+		select {
+		default:
+			n, msg, err := wscli.ReadMessage()
+			if err != nil {
+				fmt.Printf("kubelet websocket  read fail err = %v\n", err)
+				running = false
+				stop <- struct{}{}
+			}
+			err = c.WriteMessage(n, msg)
+			if err != nil {
+				fmt.Printf("apiserver websocket  write fail err = %v\n", err)
+				running = false
+				stop <- struct{}{}
+			}
 		}
-		err = c.WriteMessage(n, msg)
-		if err != nil {
-			fmt.Printf("websocket  write fail err = %v\n", err)
-			running = false
-		}
+
 	}
 }
 func RD(req *http.Request, via []*http.Request) error {
