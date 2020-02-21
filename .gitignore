@@ -1,2 +1,4 @@
 .idea
 conf/.DS_Store
+.DS_Store
+conf/cert/.DS_Store

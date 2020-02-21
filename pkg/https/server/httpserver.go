@@ -7,12 +7,16 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"net/http"
+	"time"
 )
 
 type HttpServer struct {
 	Cert string
 	Key  string
 	Addr string
+}
+
+type WS struct {
 }
 
 func (server *HttpServer) StartServer() {
@@ -39,12 +43,32 @@ func (server *HttpServer) StartServer() {
 		fmt.Printf("server start fail err = %v\n", err)
 	}
 }
+func (server *HttpServer) StartWebsocket() {
+	cert, err := tls.LoadX509KeyPair(server.Cert, server.Key)
+	if err != nil {
+		fmt.Printf("client load cert fail certpath = %s keypath = %s \n", server.Cert, server.Key)
+		return
+	}
+	config := &tls.Config{
+		Certificates:       []tls.Certificate{cert},
+		InsecureSkipVerify: true,
+	}
+	s := &http.Server{
+		Addr:      server.Addr,
+		Handler:   &WS{},
+		TLSConfig: config,
+	}
+	err = s.ListenAndServeTLS("", "")
+	if err != nil {
+		fmt.Printf("server start fail err = %v\n", err)
+	}
+}
 
 func NewHttpServer() *HttpServer {
 	return &HttpServer{
 		Cert: util.SERVER_CERT,
 		Key:  util.SERVER_KEY,
-		Addr: "0.0.0.0:10250",
+		Addr: "0.0.0.0:10260",
 	}
 }
 
@@ -162,4 +186,31 @@ func CRI(writer http.ResponseWriter, request *http.Request) {
 func RD(req *http.Request, via []*http.Request) error {
 	//返回http.ErrUseLastResponse 禁止redirect
 	return http.ErrUseLastResponse
+}
+func (ws *WS) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	upgrader := websocket.Upgrader{}
+	c, err := upgrader.Upgrade(writer, request, nil)
+	if err != nil {
+		fmt.Printf("upgrade fail err = %v\n", err)
+		return
+	}
+	//rrunning := true
+	//for rrunning {
+	//	mtype, msg, err := c.ReadMessage()
+	//	if err != nil {
+	//		fmt.Printf("server read fail err = %v\n",err)
+	//		rrunning = false
+	//		break
+	//	}
+	//	fmt.Printf("msgtype = %d msg = %s \n", mtype, string(msg))
+	//}
+	running := true
+	for running {
+		err := c.WriteMessage(websocket.TextMessage, []byte{'a'})
+		if err != nil {
+			fmt.Printf("websocket write fail err = %v", err)
+			running = false
+		}
+		time.Sleep(1 * time.Second)
+	}
 }
